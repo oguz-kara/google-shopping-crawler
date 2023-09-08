@@ -10,29 +10,45 @@ const getProductData = async ({ page, term }: SearchOnGoogle) => {
   await page.click(selectors.shoppingSelector)
 
   await page.waitForSelector(selectors.productCardSelector)
-  const products = await page.$$eval(
-    selectors.productCardSelector,
-    (elements) => {
-      return elements.map((element) => {
-        const name = element.querySelector('.tAxDx')?.textContent
-        const price = element.querySelector('.a8Pemb.OFFNJ')?.textContent
-        console.log({ name, price })
-        return { name, price }
-      })
-    },
-  )
+
+  // Use page.$$ instead of page.$$eval to await the promises
+  const productElements = await page.$$(selectors.productCardSelector)
+
+  const products = []
+
+  for (const element of productElements) {
+    const name = await element.$eval(
+      selectors.productNameSelector,
+      (el) => el.textContent,
+    )
+    const price = await element.$eval(
+      selectors.productPriceSelector,
+      (el) => el.textContent,
+    )
+    console.log({ name, price })
+    products.push({ name, price })
+  }
+
+  await page.close()
 
   return products
 }
 
 export const googleShoppingScraper = async () => {
+  const products = ['castrol 3 40', 'motul 3 40', 'motul 10 40']
   const { url } = googleConfig
   const browser = await scraper.launch({ headless: false })
-  const page = await browser.newPage()
-  await page.goto(url)
+  const productList = []
   try {
-    const data = await getProductData({ page, term: 'castrol 10 40 1lt' })
-    console.log({ data })
+    for (const product of products) {
+      const page = await browser.newPage()
+      await page.goto(url)
+      const data = await getProductData({ page, term: product })
+      productList.push({ product, data })
+    }
+
+    console.log({ productList })
+    await browser.close()
   } catch (error) {
     console.error('Error scraping Google:', error)
   }

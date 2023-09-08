@@ -1,3 +1,3 @@
-import { googleShoppingScraper } from "@features/scrapping/scrapping-logic/googleShoppingScraper";
+import { scraper } from '@features/scrapping'
 
-googleShoppingScraper()
+scraper.google.shoppingScraper()
