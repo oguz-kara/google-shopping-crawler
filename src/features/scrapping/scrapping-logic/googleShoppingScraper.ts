@@ -1,19 +1,25 @@
-import { Page } from 'puppeteer'
+import { ElementHandle, Page } from 'puppeteer'
 import scraper from '@features/scrapping/scrapingService'
 import { googleConfig } from '../config'
+import { CellValue } from 'exceljs'
 
 const launchBrowser = async () => {
-  return await scraper.launch({ headless: true })
+  return await scraper.launch({ headless: true, args: ['en-US,en;q=0.9'] })
 }
 
 const getProductData = async ({ page, term }: SearchOnGoogle) => {
   const { selectors } = googleConfig
-  await page.type(selectors.searchInputSelector, term)
+  await page.type(selectors.searchInputSelector, term as string)
   await page.keyboard.press('Enter')
-  await page.waitForSelector(selectors.shoppingSelector)
+  await page.waitForXPath(selectors.shoppingLinkXPathExpression)
   await page.click(selectors.shoppingSelector)
+  const shoppingLink = await page.$x(selectors.shoppingLinkXPathExpression)
 
-  await page.waitForSelector(selectors.productCardSelector)
+  if (shoppingLink.length > 0) {
+    await (shoppingLink[0] as ElementHandle).click()
+  }
+
+  await page.waitForNavigation({ waitUntil: 'networkidle0' })
 
   // Use page.$$ instead of page.$$eval to await the promises
   const productElements = await page.$$(selectors.productCardSelector)
@@ -38,20 +44,22 @@ const getProductData = async ({ page, term }: SearchOnGoogle) => {
   return products
 }
 
-export const googleShoppingScraper = async () => {
-  const products = ['castrol 3 40', 'motul 3 40', 'motul 10 40']
+export const googleShoppingScraper = async (
+  products: string[] | CellValue[],
+) => {
   const { url } = googleConfig
   const browser = await launchBrowser()
-  const productList = []
+  const scrapedProductList = []
+
   try {
     for (const product of products) {
       const page = await browser.newPage()
       await page.goto(url)
       const data = await getProductData({ page, term: product })
-      productList.push({ product, data })
+      scrapedProductList.push({ product, data })
     }
 
-    console.log({ productList })
+    console.log({ productList: scrapedProductList })
     await browser.close()
   } catch (error) {
     console.error('Error scraping Google:', error)
@@ -60,5 +68,5 @@ export const googleShoppingScraper = async () => {
 
 type SearchOnGoogle = {
   page: Page
-  term: string
+  term: string | CellValue
 }
