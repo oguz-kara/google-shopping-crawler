@@ -2,6 +2,10 @@ import { Page } from 'puppeteer'
 import scraper from '@features/scrapping/scrapingService'
 import { googleConfig } from '../config'
 
+const launchBrowser = async () => {
+  return await scraper.launch({ headless: true })
+}
+
 const getProductData = async ({ page, term }: SearchOnGoogle) => {
   const { selectors } = googleConfig
   await page.type(selectors.searchInputSelector, term)
@@ -37,7 +41,7 @@ const getProductData = async ({ page, term }: SearchOnGoogle) => {
 export const googleShoppingScraper = async () => {
   const products = ['castrol 3 40', 'motul 3 40', 'motul 10 40']
   const { url } = googleConfig
-  const browser = await scraper.launch({ headless: false })
+  const browser = await launchBrowser()
   const productList = []
   try {
     for (const product of products) {
