@@ -19,12 +19,12 @@ export const googleConfig = {
   adsProductLink: '.shntl.sh-np__click-target',
   adsProductShipping: '.sh-np__click-target .U6puSd',
   adsProductsImage: 'a.sh-np__click-target > .SirUVb.sh-img__image > img',
-  relatedProductNameXPath: '/html/body/div[4]/div/div/div[1]/div/a',
+  relatedProductName: '.BvQan',
   relatedProductPrice: '.sh-osd__offer-row .SH30Lb .g9WBQb.fObmGc',
   relatedProductCard: '.sh-osd__offer-row',
   relatedProductProvider: '.sh-osd__offer-row .b5ycib.shntl',
   relatedProductLink: '.sh-osd__offer-row .UxuaJe.shntl.FkMp',
-  relatedProductImageXPath: '/html/body/div[4]/div/div/div[1]/a',
+  relatedProductImage: '.r4m4nf',
   }
 };
 

@@ -12,11 +12,13 @@
   "dependencies": {
     "exceljs": "^4.3.0",
     "pretty": "^2.0.0",
-    "puppeteer": "^21.1.1"
+    "puppeteer": "^21.1.1",
+    "string-similarity": "^4.0.4"
   },
   "devDependencies": {
     "@types/node": "^20.5.9",
     "@types/pretty": "^2.0.1",
+    "@types/string-similarity": "^4.0.0",
     "@typescript-eslint/eslint-plugin": "^6.6.0",
     "@typescript-eslint/parser": "^6.6.0",
     "eslint": "^8.48.0",

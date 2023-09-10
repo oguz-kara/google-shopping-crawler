@@ -1,11 +1,8 @@
+import { ProductData } from '../types'
 import { ElementHandle, Page } from 'puppeteer'
 import scraper from '@features/scrapping/scrapingService'
 import { googleConfig } from '../config'
-import {
-  RelatedScrapedProduct,
-  RowData,
-  ScrapedProduct,
-} from '@features/excel/types'
+import { RowData, ScrapedProduct } from '@features/excel/types'
 // ! change this path later because modules can't use imports of each others.
 import { Product } from '@features/excel/types'
 
@@ -87,7 +84,17 @@ const scrapeRelatedProducts = async (page: Page) => {
       await handle.click()
       await page.waitForNavigation({ waitUntil: 'networkidle0' })
       const productElements = await page.$$(selectors.relatedProductCard)
-      const products: RelatedScrapedProduct[] = []
+      const products: ScrapedProduct[] = []
+
+      await page.waitForSelector(selectors.relatedProductName)
+      const name = await page.$eval(
+        selectors.relatedProductName,
+        (el) => el.textContent,
+      )
+      await page.waitForSelector(selectors.relatedProductImage)
+      const image = await page.$eval(selectors.relatedProductImage, (el) =>
+        el.getAttribute('src'),
+      )
 
       for (const element of productElements) {
         const price = await element.$eval(
@@ -102,7 +109,7 @@ const scrapeRelatedProducts = async (page: Page) => {
           el.getAttribute('href'),
         )
 
-        products.push({ price, provider, link })
+        products.push({ price, provider, link, image, name })
       }
 
       return products
@@ -136,11 +143,11 @@ const scrapeRegularProducts = async (page: Page) => {
       selectors.regularProductLink,
       (el) => el.textContent,
     )
-    const shipping = await element.$eval(
-      selectors.regularProductShipping,
+    const image = await element.$eval(
+      selectors.regularProductsImage,
       (el) => el.textContent,
     )
-    const result = { name, price, provider, link, shipping }
+    const result = { name, price, provider, link, image }
     products.push(result)
   }
 
@@ -152,7 +159,7 @@ export const scrapeGoogleShoppingProducts = async (
 ) => {
   const { url, selectors } = googleConfig
   const browser = await launchPuppeteerBrowser()
-  const result = []
+  const result: ProductData[] = []
 
   try {
     for (const product of products) {
@@ -171,14 +178,12 @@ export const scrapeGoogleShoppingProducts = async (
       const scrapedRegularProductData = await scrapeRegularProducts(page)
       const scrapedRelatedProductsData = await scrapeRelatedProducts(page)
 
-      const data = [
-        {
-          baseProduct: product,
-          ads: scrapedAdsProductData,
-          regular: scrapedRegularProductData,
-          related: scrapedRelatedProductsData,
-        },
-      ]
+      const data: ProductData = {
+        baseProduct: product,
+        ads: scrapedAdsProductData,
+        regular: scrapedRegularProductData,
+        related: scrapedRelatedProductsData as ScrapedProduct[],
+      }
 
       result.push(data)
       await page.close()
