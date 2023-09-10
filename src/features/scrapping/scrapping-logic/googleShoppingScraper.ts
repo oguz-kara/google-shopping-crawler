@@ -22,7 +22,7 @@ const isClickableElement = async (elementHandle: ElementHandle) => {
 
 const launchPuppeteerBrowser = async () => {
   return await scraper.launch({
-    headless: false,
+    headless: true,
     args: ['--blink-settings=imagesEnabled=false'],
   })
 }
@@ -54,11 +54,11 @@ const scrapeAdsProducts = async (page: Page) => {
     )
 
     products.push({
-      name,
-      price,
-      provider,
-      link,
-      image,
+      name: String(name),
+      price: String(price),
+      provider: String(provider),
+      link: String(link),
+      image: String(image),
     })
   }
   return products
@@ -85,14 +85,14 @@ const scrapeRelatedProducts = async (page: Page) => {
         const products: ScrapedProduct[] = []
 
         await page.waitForSelector(selectors.relatedProductName)
-        const name = await page.$eval(
+        const name = (await page.$eval(
           selectors.relatedProductName,
           (el) => el.textContent,
-        )
+        )) as string
         await page.waitForSelector(selectors.relatedProductImage)
-        const image = await page.$eval(selectors.relatedProductImage, (el) =>
+        const image = (await page.$eval(selectors.relatedProductImage, (el) =>
           el.getAttribute('src'),
-        )
+        )) as string
 
         for (const element of productElements) {
           const price = await element.$eval(
@@ -107,7 +107,13 @@ const scrapeRelatedProducts = async (page: Page) => {
             el.getAttribute('href'),
           )
 
-          products.push({ price, provider, link, image, name })
+          products.push({
+            price: String(price),
+            provider: String(provider),
+            link: String(link),
+            image: String(image),
+            name: String(name),
+          })
         }
 
         return products
@@ -148,7 +154,13 @@ const scrapeRegularProducts = async (page: Page) => {
       selectors.regularProductsImage,
       (el) => el.textContent,
     )
-    const result = { name, price, provider, link, image }
+    const result = {
+      name: String(name),
+      price: String(price),
+      provider: String(provider),
+      link: String(link),
+      image: String(image),
+    }
     products.push(result)
   }
 
@@ -163,7 +175,7 @@ export const scrapeGoogleShoppingProducts = async (
   const result: ProductData[] = []
 
   try {
-    for (const product of products) {
+    for (const [i, product] of products.entries()) {
       const page = await browser.newPage()
       await page.goto(url)
       await page.type(selectors.searchInput, product.B as string)
@@ -176,17 +188,21 @@ export const scrapeGoogleShoppingProducts = async (
       }
       await page.waitForNavigation({ waitUntil: 'networkidle0' })
       const scrapedRegularProductData = await scrapeRegularProducts(page)
-      console.log({ ln: scrapedRegularProductData.length })
-      if (scrapedRegularProductData.length === 0) {
+      const scrapedAdsProductData = await scrapeAdsProducts(page)
+      const scrapedRelatedProductsData = await scrapeRelatedProducts(page)
+      console.log({ index: i, ln: scrapedRegularProductData.length })
+      if (
+        scrapedRegularProductData.length === 0 &&
+        scrapedAdsProductData.length === 0 &&
+        scrapedRelatedProductsData?.length === 0
+      ) {
         page.close()
         continue
       }
-      const scrapedAdsProductData = await scrapeAdsProducts(page)
-      const scrapedRelatedProductsData = await scrapeRelatedProducts(page)
 
       const data: ProductData = {
         baseProduct: product,
-        ads: scrapedAdsProductData,
+        ads: scrapedAdsProductData as ScrapedProduct[],
         regular: scrapedRegularProductData as ScrapedProduct[],
         related: scrapedRelatedProductsData as ScrapedProduct[],
       }

@@ -14,10 +14,10 @@ export interface Product {
 }
 
 export interface ScrapedProduct {
-  price: string | null | undefined;
-  provider: string | null | undefined;
-  link: string | null | undefined;
-  image: string | null | undefined;
-  name: string | null | undefined;
+  price: string;
+  provider: string;
+  link: string;
+  image: string;
+  name: string;
 }
 

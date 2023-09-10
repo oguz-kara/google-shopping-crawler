@@ -20,7 +20,7 @@ const excelFilePath = path.resolve(
 const start = async () => {
   const workbook = await getReadedFile(excelFilePath)
   const data = getColumnDataFromWorksheet(workbook)
-  const testData = data.slice(267, 273)
+  const testData = data.slice(0, 100)
 
   const scrappedData = await scraper.google.shoppingScraper(testData)
   const similarProducts = scrappedData?.map((item) => getSimilarProducts(item))
