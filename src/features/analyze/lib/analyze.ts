@@ -1,46 +1,67 @@
 import { ProductWithRelateds } from '@features/product-filter/types'
+import { Cell } from 'exceljs'
+import * as _ from 'lodash'
 
-// Sample data structure
-const products = [
-  { id: 1, name: 'Product A', purchasePrice: 50, salePrice: 80 },
-  { id: 2, name: 'Product B', purchasePrice: 60, salePrice: 90 },
-  // Add more products
-]
-
-const scrapedData = [
-  { productName: 'Product A', sellerName: 'Seller X', salePrice: 75 },
-  { productName: 'Product A', sellerName: 'Seller Y', salePrice: 70 },
-  { productName: 'Product B', sellerName: 'Seller Z', salePrice: 85 },
-  // Add more scraped data
-]
+interface PriceData {
+  yourPurchasePrice: number | Cell
+  yourPrice: number | Cell
+  topCompatitorPrice: number
+  baseCompatitorPrice: number
+  averageCompatitorSalePrice: number
+}
 
 // Function to calculate top, base, and average prices
 function calculatePrices(data: ProductWithRelateds) {
   try {
     const salePrices = data.relatedProducts.map((item) =>
-      parseInt(item.price as string, 10),
+      item.price
+        ? parseFloat(item.price.replace(/[^0-9,]/g, '').replace(',', '.'))
+        : null,
     )
     return {
-      topPrice: Math.max(...salePrices),
-      basePrice: Math.min(...salePrices),
-      averagePrice:
-        salePrices.reduce((sum, price) => sum + price, 0) / salePrices.length,
+      yourPurchasePrice: data.baseProduct.E,
+      yourPrice: data.baseProduct.F,
+      topCompatitorPrice: _.max(salePrices),
+      baseCompatitorPrice: _.min(salePrices),
+      averageCompatitorSalePrice: _.mean(salePrices),
     }
   } catch (err) {
     console.log('analyze parsing error... (app)')
   }
 }
 
-// Function to update product prices based on strategy (e.g., setting to average price)
-function updatePrices(product, averagePrice) {
-  // Implement your pricing strategy here
-  product.salePrice = averagePrice
+export function analyzeProductPrices(data: ProductWithRelateds) {
+  const priceData: PriceData = calculatePrices(data) as PriceData
+  const {
+    yourPurchasePrice,
+    topCompatitorPrice,
+    baseCompatitorPrice,
+    averageCompatitorSalePrice,
+  } = priceData as PriceData
+  const minimumProfitMargin = 0.2
+
+  const recommendedSalePrice =
+    (yourPurchasePrice as number) / (1 - minimumProfitMargin)
+
+  return {
+    recommendedSalePrice:
+      recommendedSalePrice < averageCompatitorSalePrice
+        ? averageCompatitorSalePrice
+        : recommendedSalePrice,
+    averageCompatitorSalePrice,
+    topCompatitorPrice,
+    baseCompatitorPrice,
+  }
 }
 
-// Calculate and update prices for each product
-products.forEach((product) => {
-  const { averagePrice } = calculatePrices(product, scrapedData)
-  updatePrices(product, averagePrice)
-})
-
-console.log(products)
+export function analyzeProductListPrices(productsData: ProductWithRelateds[]) {
+  if (productsData)
+    return productsData?.map((product: ProductWithRelateds) => {
+      const prices = analyzeProductPrices(product)
+      return {
+        ...product.baseProduct,
+        ...prices,
+      }
+    })
+  return []
+}

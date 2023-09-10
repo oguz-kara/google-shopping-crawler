@@ -1,9 +1,10 @@
 import { scraper } from '@features/scrapping'
 import fs from 'fs'
 import path from 'path'
-import { Product } from '@features/excel/types'
 import excel from '@features/excel'
-import { getSimirlarProducts } from '@features/product-filter/lib/productFilter'
+import { getSimilarProducts } from '@features/product-filter/lib/productFilter'
+import { analyzeProductListPrices } from '@features/analyze/lib/analyze'
+import { ProductWithRelateds } from '@features/product-filter/types'
 // scraper.google.shoppingScraper()
 
 const excelFilePath = path.resolve(
@@ -16,32 +17,13 @@ const excelFilePath = path.resolve(
 const start = async () => {
   const workbook = await excel.getReadedFile(excelFilePath)
   const data = excel.getColumnDataFromWorksheet(workbook)
-
-  const testData: Product[] = [
-    {
-      A: 15,
-      B: 'SHELL CORENA S3 R 68 20 LT',
-      E: 1976.271,
-      F: 2371.53,
-    },
-    {
-      A: 15,
-      B: 'MOTUL 5100 15W50 4T 1 LT',
-      E: 159.7893,
-      F: 191.75,
-    },
-    {
-      A: 15,
-      B: 'CASTROL POWER 1 4T 10W/40 1LT',
-      E: 90.41978,
-      F: 108.5,
-    },
-  ] 
+  const testData = data.slice(267, 273)
 
   const scrappedData = await scraper.google.shoppingScraper(testData)
-  const similarProducts = scrappedData?.map((item) => getSimirlarProducts(item))
-  
-  fs.writeFile('result.txt', JSON.stringify(similarProducts), (err) => {
+  const similarProducts = scrappedData?.map((item) => getSimilarProducts(item))
+  const analyzedProduct = analyzeProductListPrices(similarProducts as ProductWithRelateds[])
+
+  fs.writeFile('result.txt', JSON.stringify(analyzedProduct), (err) => {
     if (err) console.log(err)
     else {
       console.log('File written successfully\n')

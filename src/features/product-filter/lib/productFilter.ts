@@ -1,11 +1,11 @@
 import { ProductData } from '@features/scrapping/types'
 import { findBestMatch } from 'string-similarity'
 
-export const getSimirlarProducts = (productData: ProductData) => {
-  const baseProduct = productData.baseProduct
-  const adsProducts = productData.ads
-  const regularProducts = productData.regular
-  const relatedProducts = productData.related
+export const getSimilarProducts = (productData: ProductData) => {
+  const baseProduct = productData.baseProduct || []
+  const adsProducts = productData.ads || []
+  const regularProducts = productData.regular || []
+  const relatedProducts = productData.related || []
 
   const targetName = baseProduct.B
   const threshold = 0.7

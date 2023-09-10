@@ -67,54 +67,55 @@ const scrapeAdsProducts = async (page: Page) => {
 const scrapeRelatedProducts = async (page: Page) => {
   const { selectors } = googleConfig
 
-  await page.waitForXPath(selectors.relatedProductsLinkXPathExpression, {
-    timeout: 5000,
-  })
-  const relatedProductsLinks = await page.$x(
-    selectors.relatedProductsLinkXPathExpression,
-  )
-  console.log({ relatedProductsLinks })
-  if (relatedProductsLinks.length === 0) {
-    await page.close()
-  }
-  if (relatedProductsLinks.length > 0) {
-    const handle = relatedProductsLinks[0] as ElementHandle
-    const isClickable = await isClickableElement(handle)
-    if (isClickable) {
-      await handle.click()
-      await page.waitForNavigation({ waitUntil: 'networkidle0' })
-      const productElements = await page.$$(selectors.relatedProductCard)
-      const products: ScrapedProduct[] = []
+  try {
+    await page.waitForXPath(selectors.relatedProductsLinkXPathExpression, {
+      timeout: 3500,
+    })
+    const relatedProductsLinks = await page.$x(
+      selectors.relatedProductsLinkXPathExpression,
+    )
 
-      await page.waitForSelector(selectors.relatedProductName)
-      const name = await page.$eval(
-        selectors.relatedProductName,
-        (el) => el.textContent,
-      )
-      await page.waitForSelector(selectors.relatedProductImage)
-      const image = await page.$eval(selectors.relatedProductImage, (el) =>
-        el.getAttribute('src'),
-      )
+    if (relatedProductsLinks.length > 0) {
+      const handle = relatedProductsLinks[0] as ElementHandle
+      const isClickable = await isClickableElement(handle)
+      if (isClickable) {
+        await handle.click()
+        await page.waitForNavigation({ waitUntil: 'networkidle0' })
+        const productElements = await page.$$(selectors.relatedProductCard)
+        const products: ScrapedProduct[] = []
 
-      for (const element of productElements) {
-        const price = await element.$eval(
-          selectors.relatedProductPrice,
+        await page.waitForSelector(selectors.relatedProductName)
+        const name = await page.$eval(
+          selectors.relatedProductName,
           (el) => el.textContent,
         )
-        const provider = await element.$eval(
-          selectors.relatedProductProvider,
-          (el) => el.textContent,
-        )
-        const link = await element.$eval(selectors.relatedProductLink, (el) =>
-          el.getAttribute('href'),
+        await page.waitForSelector(selectors.relatedProductImage)
+        const image = await page.$eval(selectors.relatedProductImage, (el) =>
+          el.getAttribute('src'),
         )
 
-        products.push({ price, provider, link, image, name })
+        for (const element of productElements) {
+          const price = await element.$eval(
+            selectors.relatedProductPrice,
+            (el) => el.textContent,
+          )
+          const provider = await element.$eval(
+            selectors.relatedProductProvider,
+            (el) => el.textContent,
+          )
+          const link = await element.$eval(selectors.relatedProductLink, (el) =>
+            el.getAttribute('href'),
+          )
+
+          products.push({ price, provider, link, image, name })
+        }
+
+        return products
       }
-
-      return products
+      return []
     }
-    return []
+  } catch (err) {
+    console.error('Error during scraping related products:', err)
   }
 }
 
@@ -174,14 +175,19 @@ export const scrapeGoogleShoppingProducts = async (
         await (shoppingLink[0] as ElementHandle).click()
       }
       await page.waitForNavigation({ waitUntil: 'networkidle0' })
-      const scrapedAdsProductData = await scrapeAdsProducts(page)
       const scrapedRegularProductData = await scrapeRegularProducts(page)
+      console.log({ ln: scrapedRegularProductData.length })
+      if (scrapedRegularProductData.length === 0) {
+        page.close()
+        continue
+      }
+      const scrapedAdsProductData = await scrapeAdsProducts(page)
       const scrapedRelatedProductsData = await scrapeRelatedProducts(page)
 
       const data: ProductData = {
         baseProduct: product,
         ads: scrapedAdsProductData,
-        regular: scrapedRegularProductData,
+        regular: scrapedRegularProductData as ScrapedProduct[],
         related: scrapedRelatedProductsData as ScrapedProduct[],
       }
 

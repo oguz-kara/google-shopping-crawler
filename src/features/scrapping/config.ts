@@ -4,6 +4,7 @@ export const googleConfig = {
   searchInput: '#APjFqb',
   shopping: 'div.hdtb-mitem:nth-child(2) > a:nth-child(1)',
   shoppingLinkXPathExpression: '//a[contains(text(), "Alışveriş")]',
+  noResultsMessageSelectorXPath: '/html/body/div[6]/div/div[4]/div[3]/div/div[3]/div/div/p[1][contains(text(), "aramanız hiçbir alışveriş sonucuyla eşleşmedi.")]',
   relatedProductsLinkXPathExpression: '//a[contains(text(), "mağazanın fiyatlarını karşılaştır")]',
   regularProductName: '.tAxDx',
   regularProductPrice: '.a8Pemb.OFFNJ',
