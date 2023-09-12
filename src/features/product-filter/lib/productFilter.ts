@@ -1,5 +1,5 @@
 import { ProductData } from '@features/scrapping/types'
-import { isAmountMatch, isMatchingThresholdReached, isProper } from '../utils'
+import { checkSimilarityWithWords, isAmountMatch, isProper } from '../utils'
 
 export const getSimilarProducts = (productData: ProductData) => {
   const baseProduct = productData.baseProduct || []
@@ -17,10 +17,13 @@ export const getSimilarProducts = (productData: ProductData) => {
   const levenshteinFiltered = allScrapedProducts.filter((product) =>
     isProper(String(targetName), product.name),
   )
-  const amountFiltered = levenshteinFiltered.filter((product) =>
+  const wordFiltered = levenshteinFiltered.filter((product) =>
+    checkSimilarityWithWords(targetName as string, product.name),
+  )
+  const amountFiltered = wordFiltered.filter((product) =>
     isAmountMatch(String(targetName), product.name),
   )
-  
+
   console.log({ allScrapedProducts })
   console.log(
     '___________________________________________________________________',

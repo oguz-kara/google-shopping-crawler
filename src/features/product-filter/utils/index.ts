@@ -48,3 +48,39 @@ export const isProper = (a: string, b: string) => {
   const threshold = 35
   return distance(a, b) < threshold
 }
+
+export const levenshteinSimilarity = (str1: string, str2: string) => {
+  // Calculate the Levenshtein distance using the library
+  const dis = distance(str1.toLowerCase(), str2.toLowerCase())
+
+  // Convert the distance to a similarity score between 0 and 1
+  const maxLength = Math.max(str1.length, str2.length)
+  const similarityScore = 1 - dis / maxLength
+
+  return similarityScore
+}
+
+const filterAlphanumericStrings = (inputList: string[]) => {
+  return inputList.filter(
+    (str) => /^[a-zA-Z0-9]+$/.test(str) || !/^[^\w\s]+$/.test(str),
+  )
+}
+
+export const checkSimilarityWithWords = (input: string, scraped: string) => {
+  // split strings to words
+  const inputWordList = filterAlphanumericStrings(input.split(' ')),
+    scrapedWordList = filterAlphanumericStrings(scraped.split(' ')),
+    initialValue = 0
+  const totalMatchWords = inputWordList.reduce((counter, currentInputWord) => {
+    const foundedWord = scrapedWordList.find((scrapedWord) => {
+      if (!Number.isNaN(scrapedWord) && !Number.isNaN(currentInputWord))
+        return scrapedWord === currentInputWord
+      return levenshteinSimilarity(currentInputWord, scrapedWord) >= 0.7
+    })
+    if (!foundedWord) {
+      return counter
+    }
+    return counter + 1
+  }, initialValue)
+  return totalMatchWords / inputWordList.length
+}
